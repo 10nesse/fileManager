@@ -1,147 +1,94 @@
 import os
 import shutil
+import configparser
 
-# Получение текущего рабочего каталога
-CURRENT_DIRECTORY = os.getcwd()
+class FileManager:
+    def __init__(self, config_file='config.ini'):
+        self.config = configparser.ConfigParser()
+        self.config.read(config_file)
+        self.working_directory = self.config['FileManager']['working_directory']
+        if not os.path.exists(self.working_directory):
+            os.makedirs(self.working_directory)
 
-# Функция для создания папки
-def create_folder(folder_name):
-    try:
-        os.mkdir(os.path.join(CURRENT_DIRECTORY, folder_name))
-        print(f"Папка '{folder_name}' успешно создана.")
-    except FileExistsError:
-        print(f"Папка с именем '{folder_name}' уже существует.")
+    def create_folder(self, folder_name):
+        folder_path = os.path.join(self.working_directory, folder_name)
+        os.makedirs(folder_path, exist_ok=True)
 
-# Функция для удаления папки
-def delete_folder(folder_name):
-    try:
-        os.rmdir(os.path.join(CURRENT_DIRECTORY, folder_name))
-        print(f"Папка '{folder_name}' успешно удалена.")
-    except FileNotFoundError:
-        print(f"Папка '{folder_name}' не найдена.")
-    except OSError as e:
-        print(f"Ошибка при удалении папки '{folder_name}': {e}")
+    def delete_folder(self, folder_name):
+        folder_path = os.path.join(self.working_directory, folder_name)
+        if os.path.exists(folder_path):
+            shutil.rmtree(folder_path)
+        else:
+            print("Папка не существует")
 
-# Функция для перемещения в другую папку
-def move_to_folder(folder_name):
-    global CURRENT_DIRECTORY
-    new_directory = os.path.join(CURRENT_DIRECTORY, folder_name)
-    if os.path.isdir(new_directory):
-        CURRENT_DIRECTORY = new_directory
-        print(f"Перешли в папку '{folder_name}'.")
-    else:
-        print(f"Папка '{folder_name}' не существует.")
+    def move_to_folder(self, folder_name):
+        folder_path = os.path.join(self.working_directory, folder_name)
+        if os.path.isdir(folder_path):
+            self.working_directory = folder_path
+            print("Перешли в папку:", self.working_directory)
+        else:
+            print("Папка не существует")
 
-# Функция для выхода на уровень вверх
-def move_up():
-    global CURRENT_DIRECTORY
-    parent_directory = os.path.dirname(CURRENT_DIRECTORY)
-    if parent_directory != CURRENT_DIRECTORY:
-        CURRENT_DIRECTORY = parent_directory
-        print("Вернулись на уровень вверх.")
-    else:
-        print("Вы уже на верхнем уровне.")
+    def move_up(self):
+        if self.working_directory != os.path.abspath('/'):
+            self.working_directory = os.path.dirname(self.working_directory)
+            print("Вернулись на уровень вверх:", self.working_directory)
+        else:
+            print("Вы уже в корневой папке")
 
-# Функция для создания пустого файла
-def create_file(file_name):
-    file_path = os.path.join(CURRENT_DIRECTORY, file_name)
-    try:
-        with open(file_path, 'w'):
-            pass
-        print(f"Файл '{file_name}' успешно создан.")
-    except OSError as e:
-        print(f"Ошибка при создании файла '{file_name}': {e}")
+    def create_file(self, file_name):
+        file_path = os.path.join(self.working_directory, file_name)
+        if not os.path.exists(file_path):
+            open(file_path, 'w').close()
+        else:
+            print("Файл уже существует")
 
-# Функция для записи текста в файл
-def write_to_file(file_name, text):
-    file_path = os.path.join(CURRENT_DIRECTORY, file_name)
-    try:
-        with open(file_path, 'w') as f:
-            f.write(text)
-        print(f"Текст успешно записан в файл '{file_name}'.")
-    except OSError as e:
-        print(f"Ошибка при записи текста в файл '{file_name}': {e}")
+    def write_to_file(self, file_name, text):
+        file_path = os.path.join(self.working_directory, file_name)
+        with open(file_path, 'w') as file:
+            file.write(text)
 
-# Функция для просмотра содержимого файла
-def view_file(file_name):
-    file_path = os.path.join(CURRENT_DIRECTORY, file_name)
-    try:
-        with open(file_path, 'r') as f:
-            content = f.read()
-        print(f"Содержимое файла '{file_name}':\n{content}")
-    except FileNotFoundError:
-        print(f"Файл '{file_name}' не найден.")
-    except IsADirectoryError:
-        print(f"'{file_name}' является папкой, а не файлом.")
-    except OSError as e:
-        print(f"Ошибка при чтении файла '{file_name}': {e}")
+    def read_file(self, file_name):
+        file_path = os.path.join(self.working_directory, file_name)
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                return file.read()
+        else:
+            print("Файл не существует")
 
-# Функция для удаления файла
-def delete_file(file_name):
-    file_path = os.path.join(CURRENT_DIRECTORY, file_name)
-    try:
-        os.remove(file_path)
-        print(f"Файл '{file_name}' успешно удален.")
-    except FileNotFoundError:
-        print(f"Файл '{file_name}' не найден.")
-    except IsADirectoryError:
-        print(f"'{file_name}' является папкой, а не файлом.")
-    except OSError as e:
-        print(f"Ошибка при удалении файла '{file_name}': {e}")
+    def delete_file(self, file_name):
+        file_path = os.path.join(self.working_directory, file_name)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        else:
+            print("Файл не существует")
 
-# Функция для копирования файла
-def copy_file(file_name, destination_folder):
-    source_file_path = os.path.join(CURRENT_DIRECTORY, file_name)
-    destination_folder_path = os.path.join(CURRENT_DIRECTORY, destination_folder)
-    try:
-        shutil.copy(source_file_path, destination_folder_path)
-        print(f"Файл '{file_name}' успешно скопирован в папку '{destination_folder}'.")
-    except FileNotFoundError:
-        print(f"Файл '{file_name}' не найден.")
-    except IsADirectoryError:
-        print(f"'{file_name}' является папкой, а не файлом.")
-    except OSError as e:
-        print(f"Ошибка при копировании файла '{file_name}': {e}")
+    def copy_file(self, source_file, destination_folder):
+        source_path = os.path.join(self.working_directory, source_file)
+        destination_path = os.path.join(self.working_directory, destination_folder)
+        if os.path.exists(source_path) and os.path.isdir(destination_path):
+            shutil.copy(source_path, destination_path)
+        else:
+            print("Файл или папка недоступны")
 
-# Функция для перемещения файла
-def move_file(file_name, destination_folder):
-    source_file_path = os.path.join(CURRENT_DIRECTORY, file_name)
-    destination_folder_path = os.path.join(CURRENT_DIRECTORY, destination_folder)
-    try:
-        shutil.move(source_file_path, destination_folder_path)
-        print(f"Файл '{file_name}' успешно перемещен в папку '{destination_folder}'.")
-    except FileNotFoundError:
-        print(f"Файл '{file_name}' не найден.")
-    except IsADirectoryError:
-        print(f"'{file_name}' является папкой, а не файлом.")
-    except OSError as e:
-        print(f"Ошибка при перемещении файла '{file_name}': {e}")
+    def move_file(self, source_file, destination_folder):
+        source_path = os.path.join(self.working_directory, source_file)
+        destination_path = os.path.join(self.working_directory, destination_folder)
+        if os.path.exists(source_path) and os.path.isdir(destination_path):
+            shutil.move(source_path, destination_path)
+        else:
+            print("Файл или папка недоступны")
 
-# Функция для переименования файла
-def rename_file(old_name, new_name):
-    old_file_path = os.path.join(CURRENT_DIRECTORY, old_name)
-    new_file_path = os.path.join(CURRENT_DIRECTORY, new_name)
-    try:
-        os.rename(old_file_path, new_file_path)
-        print(f"Файл '{old_name}' успешно переименован в '{new_name}'.")
-    except FileNotFoundError:
-        print(f"Файл '{old_name}' не найден.")
-    except IsADirectoryError:
-        print(f"'{old_name}' является папкой, а не файлом.")
-    except OSError as e:
-        print(f"Ошибка при переименовании файла '{old_name}': {e}")
+    def rename_file(self, old_name, new_name):
+        old_path = os.path.join(self.working_directory, old_name)
+        new_path = os.path.join(self.working_directory, new_name)
+        if os.path.exists(old_path):
+            os.rename(old_path, new_path)
+        else:
+            print("Файл не существует")
 
-if __name__ == "__main__":
-    # Пример использования функций
-    create_folder("test_folder")
-    move_to_folder("test_folder")
-    create_file("test_file.txt")
-    write_to_file("test_file.txt", "Hello, world!")
-    view_file("test_file.txt")
-    rename_file("test_file.txt", "renamed_file.txt")
-    copy_file("renamed_file.txt", "backup_folder")
-    move_file("renamed_file.txt", "new_folder")
-    delete_file("renamed_file.txt")
-    delete_folder("new_folder")
-    move_up()
-    delete_folder("test_folder")
+    def list_directory(self):
+        return os.listdir(self.working_directory)
+
+    def get_working_directory(self):
+        return self.working_directory
